@@ -22,7 +22,7 @@ def get_ocr(url):
     return ' '.join(ocr.decode('utf-8').split())
 
 def get_abstract(url):
-    response = requests.get(SOLR_URL, params={'q': 'id:"{}"'.format(url)})
+    response = requests.get(SOLR_URL, params='q=id:"{}"'.format(url))
     xml = etree.fromstring(response.content)
     return xml.find('.//str[@name="abstract"]').text
 
@@ -36,10 +36,14 @@ def index():
         abort(400, 'Missing argument "url=..." or "text=...".')
 
     if url:
+        url = url.encode('latin-1').decode('utf-8')
         if url.startswith('http://nl.dbpedia.org/'):
             content_type = 'dbp'
+
     if text:
         text = text.encode('latin-1').decode('utf-8')
+
+    print(content_type)
 
     if content_type == 'dbp':
         if url:
