@@ -30,12 +30,18 @@ def get_abstract(url):
 def index():
     url = request.params.get('url')
     text = request.params.get('text')
-    type = request.params.get('type')
+    content_type = request.params.get('type')
 
     if not url and not text:
         abort(400, 'Missing argument "url=..." or "text=...".')
 
-    if type == 'dbp':
+    if url:
+        if url.startswith('http://nl.dbpedia.org/'):
+            content_type = 'dbp'
+    if text:
+        text = text.encode('latin-1').decode('utf-8')
+
+    if content_type == 'dbp':
         if url:
             text = get_abstract(url)
         counts = dbp_topics_vct.transform([text])
@@ -61,4 +67,5 @@ if __name__ == '__main__':
     # dbp_type_clf =
     # dbp_type_vct =
 
-    run(host='localhost', port=8091)
+    run(host='localhost', port=8092)
+
