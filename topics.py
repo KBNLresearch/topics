@@ -22,7 +22,7 @@ def get_ocr(url):
     return ' '.join(ocr.decode('utf-8').split())
 
 def get_abstract(url):
-    response = requests.get(SOLR_URL, params='q=id:"{}"'.format(url))
+    response = requests.get(SOLR_URL, params={'q': 'id:"{}"'.format(url)})
     xml = etree.fromstring(response.content)
     return xml.find('.//str[@name="abstract"]').text
 
