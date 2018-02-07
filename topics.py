@@ -11,7 +11,7 @@ from lxml import etree
 from sklearn.externals import joblib
 
 TOPICS = ['politics', 'business', 'culture', 'science', 'sports']
-#TYPES = ['person', 'organisation', 'location', 'other']
+TYPES = ['person', 'organisation', 'location', 'other']
 
 SOLR_URL = 'http://linksolr1.kbresearch.nl/dbpedia/select?'
 
@@ -58,9 +58,13 @@ def index():
         if lang == 'en':
             counts = dbp_topics_en_vct.transform([text])
             topic_probs = dbp_topics_en_clf.predict_proba(counts)[0]
+            counts = dbp_types_en_vct.transform([text])
+            type_probs = dbp_types_en_clf.predict_proba(counts)[0]
         else:
             counts = dbp_topics_nl_vct.transform([text])
             topic_probs = dbp_topics_nl_clf.predict_proba(counts)[0]
+            counts = dbp_types_nl_vct.transform([text])
+            type_probs = dbp_types_nl_clf.predict_proba(counts)[0]
     else:
         lang = 'nl'
         if url:
@@ -73,7 +77,9 @@ def index():
     result['text'] = text
     result['type'] = content_type
     result['topics'] = {TOPICS[i]:p for (i,p) in enumerate(topic_probs)}
-    # result['types'] = {TYPES[i]:p for (i,p) in enumerate(type_probs)}
+
+    if content_type == 'dbp':
+        result['types'] = {TYPES[i]:p for (i,p) in enumerate(type_probs)}
 
     return result
 
@@ -88,13 +94,11 @@ if __name__ == '__main__':
     dbp_topics_en_clf = joblib.load('dbp_topics_en_clf.pkl')
     dbp_topics_en_vct = joblib.load('dbp_topics_en_vct.pkl')
 
-    '''
     # DBpedia type classifier (Dutch and English)
     dbp_types_nl_clf = joblib.load('dbp_types_nl_clf.pkl')
     dbp_types_nl_vct = joblib.load('dbp_types_nl_vct.pkl')
     dbp_types_en_clf = joblib.load('dbp_types_en_clf.pkl')
     dbp_types_en_vct = joblib.load('dbp_types_en_vct.pkl')
-    '''
 
     run(host='localhost', port=8092)
 
