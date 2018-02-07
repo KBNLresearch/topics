@@ -11,7 +11,7 @@ from lxml import etree
 from sklearn.externals import joblib
 
 TOPICS = ['politics', 'business', 'culture', 'science', 'sports']
-TYPES = ['person', 'organisation', 'location', 'other']
+#TYPES = ['person', 'organisation', 'location', 'other']
 
 SOLR_URL = 'http://linksolr1.kbresearch.nl/dbpedia/select?'
 
@@ -24,52 +24,77 @@ def get_ocr(url):
 def get_abstract(url):
     response = requests.get(SOLR_URL, params={'q': 'id:"{}"'.format(url)})
     xml = etree.fromstring(response.content)
-    return xml.find('.//str[@name="abstract"]').text
+    text = xml.find('.//str[@name="abstract"]').text
+    lang = xml.find('.//str[@name="lang"]').text
+    return text, lang
 
 @get('/')
 def index():
     url = request.params.get('url')
     text = request.params.get('text')
+    lang = request.params.get('lang')
     content_type = request.params.get('type')
 
     if not url and not text:
         abort(400, 'Missing argument "url=..." or "text=...".')
 
+    if not lang:
+        lang = 'nl'
+
+    if not content_type:
+        content_type = 'news'
+
     if url:
         url = url.encode('latin-1').decode('utf-8')
-        if url.startswith('http://nl.dbpedia.org/'):
+        if 'dbpedia' in url:
             content_type = 'dbp'
 
     if text:
         text = text.encode('latin-1').decode('utf-8')
 
-    print(content_type)
-
     if content_type == 'dbp':
         if url:
-            text = get_abstract(url)
-        counts = dbp_topics_vct.transform([text])
-        topic_probs = dbp_topics_clf.predict_proba(counts)[0]
+            text, lang = get_abstract(url)
+        if lang == 'en':
+            counts = dbp_topics_en_vct.transform([text])
+            topic_probs = dbp_topics_en_clf.predict_proba(counts)[0]
+        else:
+            counts = dbp_topics_nl_vct.transform([text])
+            topic_probs = dbp_topics_nl_clf.predict_proba(counts)[0]
     else:
+        lang = 'nl'
         if url:
             text = get_ocr(url)
-        counts = topics_vct.transform([text])
-        topic_probs = topics_clf.predict_proba(counts)[0]
+        counts = news_topics_nl_vct.transform([text])
+        topic_probs = news_topics_nl_clf.predict_proba(counts)[0]
 
     result = {}
+    result['lang'] = lang
     result['text'] = text
+    result['type'] = content_type
     result['topics'] = {TOPICS[i]:p for (i,p) in enumerate(topic_probs)}
     # result['types'] = {TYPES[i]:p for (i,p) in enumerate(type_probs)}
 
     return result
 
 if __name__ == '__main__':
-    topics_clf = joblib.load('topics_clf.pkl')
-    topics_vct = joblib.load('topics_vct.pkl')
-    dbp_topics_clf = joblib.load('dbp_topics_clf.pkl')
-    dbp_topics_vct = joblib.load('dbp_topics_vct.pkl')
-    # dbp_type_clf =
-    # dbp_type_vct =
+    # News article topic classifier (Dutch only)
+    news_topics_nl_clf = joblib.load('news_topics_nl_clf.pkl')
+    news_topics_nl_vct = joblib.load('news_topics_nl_vct.pkl')
+
+    # DBpedia topic classifier (Dutch and English)
+    dbp_topics_nl_clf = joblib.load('dbp_topics_nl_clf.pkl')
+    dbp_topics_nl_vct = joblib.load('dbp_topics_nl_vct.pkl')
+    dbp_topics_en_clf = joblib.load('dbp_topics_en_clf.pkl')
+    dbp_topics_en_vct = joblib.load('dbp_topics_en_vct.pkl')
+
+    '''
+    # DBpedia type classifier (Dutch and English)
+    dbp_types_nl_clf = joblib.load('dbp_types_nl_clf.pkl')
+    dbp_types_nl_vct = joblib.load('dbp_types_nl_vct.pkl')
+    dbp_types_en_clf = joblib.load('dbp_types_en_clf.pkl')
+    dbp_types_en_vct = joblib.load('dbp_types_en_vct.pkl')
+    '''
 
     run(host='localhost', port=8092)
 
