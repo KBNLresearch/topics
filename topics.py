@@ -4,16 +4,36 @@
 import requests
 
 from bottle import abort
+from bottle import default_app
 from bottle import get
 from bottle import request
 from bottle import run
 from lxml import etree
 from sklearn.externals import joblib
 
+
 TOPICS = ['politics', 'business', 'culture', 'science', 'sports']
 TYPES = ['person', 'organisation', 'location', 'other']
 
 SOLR_URL = 'http://linksolr1.kbresearch.nl/dbpedia/select?'
+
+
+# News article topic classifier (Dutch only)
+news_topics_nl_clf = joblib.load('news_topics_nl_clf.pkl')
+news_topics_nl_vct = joblib.load('news_topics_nl_vct.pkl')
+
+# DBpedia topic classifier (Dutch and English)
+dbp_topics_nl_clf = joblib.load('dbp_topics_nl_clf.pkl')
+dbp_topics_nl_vct = joblib.load('dbp_topics_nl_vct.pkl')
+dbp_topics_en_clf = joblib.load('dbp_topics_en_clf.pkl')
+dbp_topics_en_vct = joblib.load('dbp_topics_en_vct.pkl')
+
+# DBpedia type classifier (Dutch and English)
+dbp_types_nl_clf = joblib.load('dbp_types_nl_clf.pkl')
+dbp_types_nl_vct = joblib.load('dbp_types_nl_vct.pkl')
+dbp_types_en_clf = joblib.load('dbp_types_en_clf.pkl')
+dbp_types_en_vct = joblib.load('dbp_types_en_vct.pkl')
+
 
 def get_ocr(url):
     response = requests.get(url)
@@ -27,6 +47,7 @@ def get_abstract(url):
     text = xml.find('.//str[@name="abstract"]').text
     lang = xml.find('.//str[@name="lang"]').text
     return text, lang
+
 
 @get('/')
 def index():
@@ -83,22 +104,9 @@ def index():
 
     return result
 
+
 if __name__ == '__main__':
-    # News article topic classifier (Dutch only)
-    news_topics_nl_clf = joblib.load('news_topics_nl_clf.pkl')
-    news_topics_nl_vct = joblib.load('news_topics_nl_vct.pkl')
-
-    # DBpedia topic classifier (Dutch and English)
-    dbp_topics_nl_clf = joblib.load('dbp_topics_nl_clf.pkl')
-    dbp_topics_nl_vct = joblib.load('dbp_topics_nl_vct.pkl')
-    dbp_topics_en_clf = joblib.load('dbp_topics_en_clf.pkl')
-    dbp_topics_en_vct = joblib.load('dbp_topics_en_vct.pkl')
-
-    # DBpedia type classifier (Dutch and English)
-    dbp_types_nl_clf = joblib.load('dbp_types_nl_clf.pkl')
-    dbp_types_nl_vct = joblib.load('dbp_types_nl_vct.pkl')
-    dbp_types_en_clf = joblib.load('dbp_types_en_clf.pkl')
-    dbp_types_en_vct = joblib.load('dbp_types_en_vct.pkl')
-
     run(host='localhost', port=8092)
+else:
+    app = default_app()
 
