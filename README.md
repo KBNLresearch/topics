@@ -4,5 +4,4 @@ Number of multi-class classifiers for news articles (topic) and DBpedia descript
 
 ## Web interface
 
-A Bottle web application can be started with `./topics.py` accepting requests with a newspaper or dbpedia url as parameter, e.g. `http://kbresearch.nl/topics/?url=http://nl.dbpedia.org/resource/Albert_Einstein`
-
+A Bottle web application can be started with `./topics.py` accepting requests with a newspaper article or DBpedia url as parameter, e.g. `http://kbresearch.nl/topics/?url=http://nl.dbpedia.org/resource/Albert_Einstein`. The application will work out the type of resource and language for itself and return all available classifier results.
